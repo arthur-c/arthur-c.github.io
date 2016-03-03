@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Arthur&#39;s Pages</title>
+    <link>http://arthur-c.github.io/posts/</link>
+    <description>Recent content in Posts on Arthur&#39;s Pages</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Thu, 03 Mar 2016 12:00:00 +0000</lastBuildDate>
+    <atom:link href="http://arthur-c.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>java.net.UnknownHostException with Alpine Linux</title>
+      <link>http://arthur-c.github.io/posts/alpine-linux-java-unknownhostexception/</link>
+      <pubDate>Thu, 03 Mar 2016 12:00:00 +0000</pubDate>
+      
+      <guid>http://arthur-c.github.io/posts/alpine-linux-java-unknownhostexception/</guid>
+      <description>&lt;p&gt;There is no Name Service Switch file in Alpine linux, and java need one for java.net.InetAddress.getLocalHost for example.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;echo &#39;hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4&#39; &amp;gt; /etc/nsswitch.conf
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Or in a Dockerfile :&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;RUN echo &#39;hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4&#39; &amp;gt; /etc/nsswitch.conf
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Slack message on CoreOS fleet unit failure</title>
+      <link>http://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</link>
+      <pubDate>Sat, 09 Jan 2016 12:00:00 +0100</pubDate>
+      
+      <guid>http://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</guid>
+      <description>
+
+&lt;h3 id=&#34;quick-overview:f621ea799e7bf648feec8e14d6707482&#34;&gt;Quick overview&lt;/h3&gt;
+
+&lt;p&gt;AWS oriented, but the logic can be used with other messaging services.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Create an AWS Lambda function to post to Slack.&lt;/li&gt;
+&lt;li&gt;Create an AWS SNS topic to trigger the Lambda function.&lt;/li&gt;
+&lt;li&gt;Deploy a dedicated monitoring unit to trigger SNS.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&#34;context:f621ea799e7bf648feec8e14d6707482&#34;&gt;Context&lt;/h3&gt;
+
+&lt;p&gt;I needed to monitore fleet unit failure on my CoreOS clusters and I was very inspired by this post: &lt;a href=&#34;http://northernlightlabs.se/systemd.status.mail.on.unit.failure&#34;&gt;http://northernlightlabs.se/systemd.status.mail.on.unit.failure&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;As we can&amp;rsquo;t deploy templates with fleet, we can&amp;rsquo;t use this solution which triggers a unit template at failure: &lt;code&gt;OnFailure=unit-status-mail@%n.service&lt;/code&gt; where %n is the prefix of the failed unit.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s my workaround below.&lt;/p&gt;
+
+&lt;h3 id=&#34;slack-web-hook:f621ea799e7bf648feec8e14d6707482&#34;&gt;Slack web hook&lt;/h3&gt;
+
+&lt;p&gt;We need to add a web hook integration to a channel and get the web hook url.&lt;/p&gt;
+
+&lt;p&gt;Wen can specify a name and a logo.&lt;/p&gt;
+
+&lt;h3 id=&#34;aws-lambda-function:f621ea799e7bf648feec8e14d6707482&#34;&gt;AWS Lambda function&lt;/h3&gt;
+
+&lt;p&gt;Thanks to &lt;a href=&#34;https://gist.github.com/vgeshel/1dba698aed9e8b39a464&#34;&gt;vgeshel&lt;/a&gt;, we create a nodejs Lambda function on AWS with this code:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-javascript&#34;&gt;console.log(&#39;Loading function&#39;);
+
+const https = require(&#39;https&#39;);
+const url = require(&#39;url&#39;);
+// to get the slack hook url, go into slack admin and create a new &amp;quot;Incoming Webhook&amp;quot; integration
+const slack_url = &#39;https://hooks.slack.com/services/...&#39;;
+const slack_req_opts = url.parse(slack_url);
+slack_req_opts.method = &#39;POST&#39;;
+slack_req_opts.headers = {&#39;Content-Type&#39;: &#39;application/json&#39;};
+
+exports.handler = function(event, context) {
+  (event.Records || []).forEach(function (rec) {
+    if (rec.Sns) {
+      var req = https.request(slack_req_opts, function (res) {
+        if (res.statusCode === 200) {
+          context.succeed(&#39;posted to slack&#39;);
+        } else {
+          context.fail(&#39;status code: &#39; + res.statusCode);
+        }
+      });
+      
+      req.on(&#39;error&#39;, function(e) {
+        console.log(&#39;problem with request: &#39; + e.message);
+        context.fail(e.message);
+      });
+      
+      req.write(JSON.stringify({text: JSON.stringify(rec.Sns.Message, null, &#39;  &#39;)})); // for testing: , channel: &#39;@vadim&#39;
+      
+      req.end();
+    }
+  });
+};
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;NB: the first million of Lambda resquets is free, each month !&lt;/p&gt;
+
+&lt;h3 id=&#34;sns-topic:f621ea799e7bf648feec8e14d6707482&#34;&gt;SNS topic&lt;/h3&gt;
+
+&lt;p&gt;Now we create a SNS topic and a subscription with our Lambda function as protocol. Note the topic ARN, something like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;arn:aws:sns:eu-west-1:1234567:fleet-alert
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;SNS pricing:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;There is no charge for Lambda Notifications.&lt;/li&gt;
+&lt;li&gt;First 1,000 Amazon SNS Email/Email-JSON Notifications per month are free.&lt;/li&gt;
+&lt;li&gt;First 1,000,000 Amazon SNS API Requests per month are free.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;aws-credentials:f621ea799e7bf648feec8e14d6707482&#34;&gt;AWS Credentials&lt;/h3&gt;
+
+&lt;p&gt;The more convenient way is to add an IAM role with SNS permissions to the EC2 instances. We can also use AWS credentials in the environment.&lt;/p&gt;
+
+&lt;h3 id=&#34;docker-container-with-awscli:f621ea799e7bf648feec8e14d6707482&#34;&gt;Docker container with awscli&lt;/h3&gt;
+
+&lt;p&gt;Now we need to call the SNS topic with the AWS API. The easiest way is &lt;a href=&#34;https://aws.amazon.com/cli/&#34;&gt;awscli&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;A docker with awscli already exists on the Docker public image library: &lt;a href=&#34;https://hub.docker.com/r/anigeo/awscli/&#34;&gt;https://hub.docker.com/r/anigeo/awscli/&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;The dockerfile:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FROM alpine:latest RUN \
+  mkdir -p /aws &amp;amp;&amp;amp; \
+  apk -Uuv add groff less python py-pip &amp;amp;&amp;amp; \
+  pip install awscli &amp;amp;&amp;amp; \
+  apk --purge -v del py-pip &amp;amp;&amp;amp; \
+  rm /var/cache/apk/*
+WORKDIR /aws
+ENTRYPOINT [&amp;quot;aws&amp;quot;]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s try it, update this code with your variables and add your AWS credentials in the docker environment if needed:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;docker run --rm --name sns_hello_world -e AWS_DEFAULT_REGION={{ sns_region }} anigeo/awscli sns publish \
+          --topic-arn arn:aws:sns:{{ sns_region }}:{{ aws_account_id }}:{{ sns_topic }} \
+          --message &amp;quot;hello world&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The docker should return a json message like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;{
+&amp;quot;MessageId&amp;quot;: &amp;quot;212ab798-3e00-333e-9368-vf8a90976e23b&amp;quot;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and you should receive &amp;ldquo;hello world&amp;rdquo; on your Slack channel.&lt;/p&gt;
+
+&lt;h3 id=&#34;fleet-units:f621ea799e7bf648feec8e14d6707482&#34;&gt;Fleet units&lt;/h3&gt;
+
+&lt;p&gt;Everything is set up to post to Slack, we need two more things:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Reconfigure the monitored unit and redeploy it.&lt;/li&gt;
+&lt;li&gt;Deploy the monitoring unit.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&#34;the-monitored-unit-my-app-service:f621ea799e7bf648feec8e14d6707482&#34;&gt;The monitored unit (my_app@.service)&lt;/h4&gt;
+
+&lt;p&gt;We need to add &lt;code&gt;OnFailure=my_app-unit-status@%i.service&lt;/code&gt; in the Unit section to have something like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[Unit]
+Description=My application
+After=docker.service
+Requires=docker.service
+OnFailure=my_app-unit-status@%i.service
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we can redeploy it, in this example we want five units:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;fleetctl stop my_app@{1-5}.service
+fleetctl destroy my_app@{1-5}.service
+fleetctl start my_app@{1-5}.service
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;NB: I always stop a unit before destroying it, see &lt;a href=&#34;https://github.com/coreos/fleet/issues/1000&#34;&gt;here&lt;/a&gt; and &lt;a href=&#34;https://github.com/coreos/fleet/issues/1400&#34;&gt;here&lt;/a&gt;&lt;/p&gt;
+
+&lt;h4 id=&#34;the-monitoring-unit-my-app-unit-status-service:f621ea799e7bf648feec8e14d6707482&#34;&gt;The monitoring unit (my_app-unit-status@.service)&lt;/h4&gt;
+
+&lt;p&gt;Remarks:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;RefuseManualStart=true&lt;/code&gt;: we only wan&amp;rsquo;t to start the unit when my_app fails.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;MachineOf=my_app@%i.service&lt;/code&gt; in Fleet section: we want to deploy the unit on the same node as my_app.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;%H&lt;/code&gt; is a systemd variable referring to the hostname.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;${PLATFORM}&lt;/code&gt; is an environment variable on my nodes.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code&gt;[Unit]
+Description=Monitore my_app unit status
+RefuseManualStart=true
+
+[Service]
+EnvironmentFile=/etc/environment
+TimeoutStartSec=30
+Type=oneshot
+ExecStartPre=-/usr/bin/docker kill %p
+ExecStartPre=-/usr/bin/docker rm %p
+ExecStartPre=/usr/bin/docker pull anigeo/awscli
+ExecStart=/usr/bin/docker run --rm --name %p -e AWS_DEFAULT_REGION={{ sns_region }} anigeo/awscli sns publish \
+          --topic-arn arn:aws:sns:{{ sns_region}}:{{ aws_account_id }}:{{ sns_topic }} \
+          --message &amp;quot;ALERT - CoreOS unit failure: my_app@%i unit failed. Host: %H platform: ${PLATFORM}&amp;quot;
+
+[X-Fleet]
+MachineOf=my_app@%i.service
+Conflicts=my_app-unit-status@*.service
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&#34;results:f621ea799e7bf648feec8e14d6707482&#34;&gt;Results&lt;/h3&gt;
+
+&lt;h4 id=&#34;my-app-error:f621ea799e7bf648feec8e14d6707482&#34;&gt;my_app error:&lt;/h4&gt;
+
+&lt;p&gt;Here&amp;rsquo;s an application failure, so a unit failure as well:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;Dec 12 13:47:08 coreos-worker-01 sh[24265]: ERROR org.springframework.boot.SpringApplication - Application startup failed
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;my-app-unit-status-logs:f621ea799e7bf648feec8e14d6707482&#34;&gt;my_app-unit-status logs:&lt;/h4&gt;
+
+&lt;pre&gt;&lt;code&gt;Dec 12 13:47:17 coreos-worker-01 docker[24451]: 8f40a5710c12: Pull complete
+Dec 12 13:47:17 coreos-worker-01 docker[24451]: e2a9a58db0c5: Pull complete
+Dec 12 13:47:17 coreos-worker-01 docker[24451]: b9091050870f: Pull complete
+Dec 12 13:47:17 coreos-worker-01 docker[24451]: Digest: sha256:4be490e3e800b0419fef34d238fa36ef3aaeadda4cf09347c4a10f71ad7c390e
+Dec 12 13:47:17 coreos-worker-01 docker[24451]: Status: Downloaded newer image for anigeo/awscli:latest
+Dec 12 13:47:18 coreos-worker-01 docker[24475]: {
+Dec 12 13:47:18 coreos-worker-01 docker[24475]: &amp;quot;MessageId&amp;quot;: &amp;quot;266ab798-3e00-511e-9368-f8afdaa6e23b&amp;quot;
+Dec 12 13:47:18 coreos-worker-01 docker[24475]: }
+Dec 12 13:47:18 coreos-worker-01 systemd[1]: Started Monitor mylog unit status.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h4 id=&#34;slack:f621ea799e7bf648feec8e14d6707482&#34;&gt;Slack&lt;/h4&gt;
+
+&lt;p&gt;The final result:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;../../posts/images/fleet_alert.png&#34; alt=&#34;alt text&#34; /&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

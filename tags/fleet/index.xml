@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Fleet on Arthur&#39;s Page</title>
-    <link>http://arthur-c.github.io/tags/fleet/</link>
+    <link>https://arthur-c.github.io/tags/fleet/</link>
     <description>Recent content in Fleet on Arthur&#39;s Page</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 09 Jan 2016 12:00:00 +0100</lastBuildDate>
     
-	<atom:link href="http://arthur-c.github.io/tags/fleet/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://arthur-c.github.io/tags/fleet/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Slack message on CoreOS fleet unit failure</title>
-      <link>http://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</link>
+      <link>https://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</link>
       <pubDate>Sat, 09 Jan 2016 12:00:00 +0100</pubDate>
       
-      <guid>http://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</guid>
+      <guid>https://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</guid>
       <description>Quick overview AWS oriented, but the logic can be used with other messaging services.
  Create an AWS Lambda function to post to Slack.</description>
     </item>

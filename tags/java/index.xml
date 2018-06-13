@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Coreos on Arthur&#39;s Page</title>
-    <link>http://arthur-c.github.io/categories/coreos/</link>
-    <description>Recent content in Coreos on Arthur&#39;s Page</description>
+    <title>Java on Arthur&#39;s Page</title>
+    <link>http://arthur-c.github.io/tags/java/</link>
+    <description>Recent content in Java on Arthur&#39;s Page</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Thu, 03 Mar 2016 21:00:00 +0000</lastBuildDate>
     
-	<atom:link href="http://arthur-c.github.io/categories/coreos/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="http://arthur-c.github.io/tags/java/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
@@ -19,16 +19,6 @@
       <guid>http://arthur-c.github.io/posts/alpine-linux-java-unknownhostexception/</guid>
       <description>There is no Name Service Switch file in Alpine linux, and java need one for java.net.InetAddress.getLocalHost for example.
 echo &#39;hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4&#39; &amp;gt; /etc/nsswitch.</description>
-    </item>
-    
-    <item>
-      <title>Slack message on CoreOS fleet unit failure</title>
-      <link>http://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</link>
-      <pubDate>Sat, 09 Jan 2016 12:00:00 +0100</pubDate>
-      
-      <guid>http://arthur-c.github.io/posts/fleet-unit-failure-alert-to-slack/</guid>
-      <description>Quick overview AWS oriented, but the logic can be used with other messaging services.
- Create an AWS Lambda function to post to Slack.</description>
     </item>
     
   </channel>

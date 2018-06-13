@@ -1,60 +1,59 @@
-	<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-us" lang="en-us">
 <head>
   <link href="http://gmpg.org/xfn/11" rel="profile">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
-  <meta name="generator" content="Hugo 0.16-DEV" />
+  <meta name="generator" content="Hugo 0.43-DEV" />
 
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
-  <title> Slack message on CoreOS fleet unit failure &middot; Arthur&#39;s Pages </title>
+  <title>Slack message on CoreOS fleet unit failure &middot; Arthur&#39;s Page</title>
 
   
-  <link rel="stylesheet" href="http://arthur-c.github.io/css/poole.css">
-  <link rel="stylesheet" href="http://arthur-c.github.io/css/syntax.css">
-  <link rel="stylesheet" href="http://arthur-c.github.io/css/hyde.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=PT+Sans:400,400italic,700|Abril+Fatface">
+  <link type="text/css" rel="stylesheet" href="http://arthur-c.github.io/css/print.css" media="print">
+  <link type="text/css" rel="stylesheet" href="http://arthur-c.github.io/css/poole.css">
+  <link type="text/css" rel="stylesheet" href="http://arthur-c.github.io/css/syntax.css">
+  <link type="text/css" rel="stylesheet" href="http://arthur-c.github.io/css/hyde.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Abril+Fatface|PT+Sans:400,400i,700">
+
 
   
   <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
   <link rel="shortcut icon" href="/favicon.png">
 
   
-  <link href="" rel="alternate" type="application/rss+xml" title="Arthur&#39;s Pages" />
+  <link href="" rel="alternate" type="application/rss+xml" title="Arthur&#39;s Page" />
+
+  
 </head>
 
-	<body class="">
-		<div class="sidebar">
+  <body class=" ">
+  <div class="sidebar">
   <div class="container sidebar-sticky">
     <div class="sidebar-about">
-      <a href="http://arthur-c.github.io/"><h1>Arthur&#39;s Pages</h1></a>
+      <a href="http://arthur-c.github.io/"><h1>Arthur&#39;s Page</h1></a>
       <p class="lead">
-       void 
+       arthur-c.github.io 
       </p>
     </div>
 
     <ul class="sidebar-nav">
-      <li><a href="/">Home</a> </li>
-      
-        <li><a href="/posts/fleet-unit-failure-alert-to-slack/"> Slack message on CoreOS fleet unit failure </a></li>
-      
-        <li><a href="/posts/alpine-linux-java-unknownhostexception/"> java.net.UnknownHostException with Alpine Linux </a></li>
-      
+      <li><a href="http://arthur-c.github.io/">Home</a> </li>
+      <li><a href="/posts/secrets-management-kms-kubernetes/"> Kubernetes secrets management with AWS KMS </a></li><li><a href="/posts/fleet-unit-failure-alert-to-slack/"> Slack message on CoreOS fleet unit failure </a></li><li><a href="/posts/alpine-linux-java-unknownhostexception/"> java.net.UnknownHostException with Alpine Linux </a></li>
     </ul>
 
     <p>clement.arthur@gmail.com</p>
   </div>
 </div>
 
+    <div class="content container">
+    <div class="post">
+  <h1>Slack message on CoreOS fleet unit failure</h1>
+  <span class="post-date">Sat, Jan 9, 2016</span>
+  
 
-		<div class="content container">
-			<div class="post">
-			 	<h1>Slack message on CoreOS fleet unit failure</h1>
-			  <span class="post-date">Sat, Jan 9, 2016</span>
-			      
-
-<h3 id="quick-overview:f621ea799e7bf648feec8e14d6707482">Quick overview</h3>
+<h3 id="quick-overview">Quick overview</h3>
 
 <p>AWS oriented, but the logic can be used with other messaging services.</p>
 
@@ -64,7 +63,7 @@
 <li>Deploy a dedicated monitoring unit to trigger SNS.</li>
 </ol>
 
-<h3 id="context:f621ea799e7bf648feec8e14d6707482">Context</h3>
+<h3 id="context">Context</h3>
 
 <p>I needed to monitore fleet unit failure on my CoreOS clusters and I was very inspired by this post: <a href="http://northernlightlabs.se/systemd.status.mail.on.unit.failure">http://northernlightlabs.se/systemd.status.mail.on.unit.failure</a>.</p>
 
@@ -72,13 +71,13 @@
 
 <p>Here&rsquo;s my workaround below.</p>
 
-<h3 id="slack-web-hook:f621ea799e7bf648feec8e14d6707482">Slack web hook</h3>
+<h3 id="slack-web-hook">Slack web hook</h3>
 
 <p>We need to add a web hook integration to a channel and get the web hook url.</p>
 
 <p>Wen can specify a name and a logo.</p>
 
-<h3 id="aws-lambda-function:f621ea799e7bf648feec8e14d6707482">AWS Lambda function</h3>
+<h3 id="aws-lambda-function">AWS Lambda function</h3>
 
 <p>Thanks to <a href="https://gist.github.com/vgeshel/1dba698aed9e8b39a464">vgeshel</a>, we create a nodejs Lambda function on AWS with this code:</p>
 
@@ -118,7 +117,7 @@ exports.handler = function(event, context) {
 
 <p>NB: the first million of Lambda resquets is free, each month !</p>
 
-<h3 id="sns-topic:f621ea799e7bf648feec8e14d6707482">SNS topic</h3>
+<h3 id="sns-topic">SNS topic</h3>
 
 <p>Now we create a SNS topic and a subscription with our Lambda function as protocol. Note the topic ARN, something like this:</p>
 
@@ -133,11 +132,11 @@ exports.handler = function(event, context) {
 <li>First 1,000,000 Amazon SNS API Requests per month are free.</li>
 </ul>
 
-<h3 id="aws-credentials:f621ea799e7bf648feec8e14d6707482">AWS Credentials</h3>
+<h3 id="aws-credentials">AWS Credentials</h3>
 
 <p>The more convenient way is to add an IAM role with SNS permissions to the EC2 instances. We can also use AWS credentials in the environment.</p>
 
-<h3 id="docker-container-with-awscli:f621ea799e7bf648feec8e14d6707482">Docker container with awscli</h3>
+<h3 id="docker-container-with-awscli">Docker container with awscli</h3>
 
 <p>Now we need to call the SNS topic with the AWS API. The easiest way is <a href="https://aws.amazon.com/cli/">awscli</a>.</p>
 
@@ -171,7 +170,7 @@ ENTRYPOINT [&quot;aws&quot;]
 
 <p>and you should receive &ldquo;hello world&rdquo; on your Slack channel.</p>
 
-<h3 id="fleet-units:f621ea799e7bf648feec8e14d6707482">Fleet units</h3>
+<h3 id="fleet-units">Fleet units</h3>
 
 <p>Everything is set up to post to Slack, we need two more things:</p>
 
@@ -180,7 +179,7 @@ ENTRYPOINT [&quot;aws&quot;]
 <li>Deploy the monitoring unit.</li>
 </ol>
 
-<h4 id="the-monitored-unit-my-app-service:f621ea799e7bf648feec8e14d6707482">The monitored unit (my_app@.service)</h4>
+<h4 id="the-monitored-unit-my-app-service">The monitored unit (my_app@.service)</h4>
 
 <p>We need to add <code>OnFailure=my_app-unit-status@%i.service</code> in the Unit section to have something like this:</p>
 
@@ -200,7 +199,7 @@ fleetctl start my_app@{1-5}.service
 
 <p>NB: I always stop a unit before destroying it, see <a href="https://github.com/coreos/fleet/issues/1000">here</a> and <a href="https://github.com/coreos/fleet/issues/1400">here</a></p>
 
-<h4 id="the-monitoring-unit-my-app-unit-status-service:f621ea799e7bf648feec8e14d6707482">The monitoring unit (my_app-unit-status@.service)</h4>
+<h4 id="the-monitoring-unit-my-app-unit-status-service">The monitoring unit (my_app-unit-status@.service)</h4>
 
 <p>Remarks:</p>
 
@@ -231,16 +230,16 @@ MachineOf=my_app@%i.service
 Conflicts=my_app-unit-status@*.service
 </code></pre>
 
-<h3 id="results:f621ea799e7bf648feec8e14d6707482">Results</h3>
+<h3 id="results">Results</h3>
 
-<h4 id="my-app-error:f621ea799e7bf648feec8e14d6707482">my_app error:</h4>
+<h4 id="my-app-error">my_app error:</h4>
 
 <p>Here&rsquo;s an application failure, so a unit failure as well:</p>
 
 <pre><code>Dec 12 13:47:08 coreos-worker-01 sh[24265]: ERROR org.springframework.boot.SpringApplication - Application startup failed
 </code></pre>
 
-<h4 id="my-app-unit-status-logs:f621ea799e7bf648feec8e14d6707482">my_app-unit-status logs:</h4>
+<h4 id="my-app-unit-status-logs">my_app-unit-status logs:</h4>
 
 <pre><code>Dec 12 13:47:17 coreos-worker-01 docker[24451]: 8f40a5710c12: Pull complete
 Dec 12 13:47:17 coreos-worker-01 docker[24451]: e2a9a58db0c5: Pull complete
@@ -253,32 +252,37 @@ Dec 12 13:47:18 coreos-worker-01 docker[24475]: }
 Dec 12 13:47:18 coreos-worker-01 systemd[1]: Started Monitor mylog unit status.
 </code></pre>
 
-<h4 id="slack:f621ea799e7bf648feec8e14d6707482">Slack</h4>
+<h4 id="slack">Slack</h4>
 
 <p>The final result:</p>
 
 <p><img src="../../posts/images/fleet_alert.png" alt="alt text" /></p>
 
-			</div>
+</div>
 
-			
-				<h2>Comments</h2>
-				<div id="disqus_thread"></div>
-<script type="text/javascript">
-     
-    var disqus_shortname = 'arthurc'; 
-
-     
+<h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script>
+    var disqus_config = function () {
+    
+    
+    
+    };
     (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "arthurc" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
     })();
 </script>
 <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
-			
-		</div>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+    </div>
 
+    
   </body>
 </html>

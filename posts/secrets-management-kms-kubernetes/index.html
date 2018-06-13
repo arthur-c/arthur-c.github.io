@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 
-  <title>java.net.UnknownHostException with Alpine Linux &middot; Arthur&#39;s Page</title>
+  <title>Kubernetes secrets management with AWS KMS &middot; Arthur&#39;s Page</title>
 
   
   <link type="text/css" rel="stylesheet" href="http://arthur-c.github.io/css/print.css" media="print">
@@ -49,16 +49,86 @@
 
     <div class="content container">
     <div class="post">
-  <h1>java.net.UnknownHostException with Alpine Linux</h1>
-  <span class="post-date">Thu, Mar 3, 2016</span>
-  <p>There is no Name Service Switch file in Alpine linux, and java need one for java.net.InetAddress.getLocalHost for example.</p>
+  <h1>Kubernetes secrets management with AWS KMS</h1>
+  <span class="post-date">Wed, Jun 13, 2018</span>
+  
 
-<pre><code>echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' &gt; /etc/nsswitch.conf
+<p>A workflow to manage secrets and configuration on Kubernetes.</p>
+
+<p><strong>PROS:</strong></p>
+
+<ul>
+<li>simple</li>
+<li>single source of truth</li>
+<li>securely versionned</li>
+<li>decrypted on the fly</li>
+<li>private key managed by AWS</li>
+</ul>
+
+<p><strong>CONS:</strong></p>
+
+<ul>
+<li>you have to trust AWS</li>
+<li>kubernetes secrets are stored unencrypted in etcd (<a href="https://github.com/kubernetes/features/issues/92">https://github.com/kubernetes/features/issues/92</a>)</li>
+</ul>
+
+<h1 id="step-1-aws-kms-key-creation">Step 1: AWS KMS key creation</h1>
+
+<pre><code>export AWS_DEFAULT_REGION=eu-west-1
+export AWS_PROFILE=staging
+export KMS_KEY_NAME=myproject
+aws kms create-key --description $KMS_KEY_NAME --output json | jq .KeyMetadata.Arn | xargs aws kms create-alias --alias-name alias/$KMS_KEY_NAME --target-key-id
 </code></pre>
 
-<p>Or in a Dockerfile :</p>
+<h1 id="step-2-secret-encryption">Step 2: secret encryption</h1>
 
-<pre><code>RUN echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' &gt; /etc/nsswitch.conf
+<pre><code>aws kms encrypt --key-id alias/$KMS_KEY_NAME --plaintext fileb://myproject_secrets --query CiphertextBlob --output text &gt; myproject_secrets.encrypted
+</code></pre>
+
+<ul>
+<li>myproject_secrets should be deleted and never committed.</li>
+<li>myproject_secrets.encrypted can be safely stored in the project repository.</li>
+</ul>
+
+<h1 id="step-3-secret-decryption-and-kubernetes-secret-creation">Step 3: secret decryption and kubernetes secret creation</h1>
+
+<pre><code>cat myproject_secrets.encrypted | base64 -d &gt; myproject_secrets.encrypted.raw
+aws kms decrypt --ciphertext-blob fileb://myproject_secrets.encrypted.raw --output text --query Plaintext | base64 -d &gt; myproject_secrets
+kubectl create secret generic myproject_secrets --from-env-file=myproject_secrets
+rm myproject_secrets myproject_secrets.encrypted.raw
+</code></pre>
+
+<h1 id="notes">Notes</h1>
+
+<h2 id="aws-iam-permissions">AWS IAM permissions</h2>
+
+<p>The user/process creating the kubernetes secret needs at least the permission to decrypt with the key:</p>
+
+<pre><code>        {
+            &quot;Sid&quot;: &quot;VisualEditor33&quot;,
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;kms:Decrypt&quot;
+            ],
+            &quot;Resource&quot;: [
+                &quot;arn:aws:kms:eu-west-1:896828068574:key/XXXXX&quot;
+            ]
+        }
+</code></pre>
+
+<h2 id="kubernetes-secrets-versionning">Kubernetes secrets versionning</h2>
+
+<p>Versionning Kubernetes secrets allows rollbacks and treat configuration changes
+as new deployments</p>
+
+<p>Examples:</p>
+
+<pre><code>kubectl create secret generic myproject_secrets-$BUILD_NUMBER
+</code></pre>
+
+<p>or</p>
+
+<pre><code>kubectl create secret generic myproject_secrets-$GIT_COMMIT
 </code></pre>
 
 </div>
